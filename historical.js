@@ -13,6 +13,36 @@
   const tbody = document.getElementById('historicalRows');
   const daybox = document.getElementById('historicalDays');
   const refresh = document.getElementById('historicalRefresh');
+
+  function renderCompass() {
+    const el=document.getElementById('historicalCompass');
+    if(!el)return;
+    const names=['N','NE','E','SE','S','SW','W','NW'];
+    const counts=Array(8).fill(0);
+    let loaded=0;
+    for(const r of rows) {
+      const w=dateMap[r[1]];
+      if(!w || w.error)continue;
+      const bin=Math.round(norm(w.dir)/45)%8;
+      counts[bin]++;loaded++;
+    }
+    const max=Math.max(1,...counts);
+    const polar=(degrees,r)=>{const a=(degrees-90)*Math.PI/180;return [160+Math.cos(a)*r,160+Math.sin(a)*r];};
+    const sector=(index)=>{
+      const mid=index*45,start=mid-21.8,end=mid+21.8;
+      const [x1,y1]=polar(start,45),[x2,y2]=polar(start,122),[x3,y3]=polar(end,122),[x4,y4]=polar(end,45);
+      return `M ${x1.toFixed(2)} ${y1.toFixed(2)} L ${x2.toFixed(2)} ${y2.toFixed(2)} A 122 122 0 0 1 ${x3.toFixed(2)} ${y3.toFixed(2)} L ${x4.toFixed(2)} ${y4.toFixed(2)} A 45 45 0 0 0 ${x1.toFixed(2)} ${y1.toFixed(2)} Z`;
+    };
+    const shapes=names.map((name,i)=>{
+      const count=counts[i],intensity=count/max;
+      const [tx,ty]=polar(i*45,141);
+      const fill=count ? `rgba(89,216,124,${(0.22+0.73*intensity).toFixed(3)})` : 'rgba(255,255,255,.035)';
+      return `<path d="${sector(i)}" fill="${fill}" stroke="rgba(255,255,255,.12)" stroke-width="1"><title>${name}: ${count} top effort${count===1?'':'s'}</title></path><text x="${tx.toFixed(1)}" y="${(ty+4).toFixed(1)}" text-anchor="middle" font-size="13" font-weight="700" fill="#f6f7fb">${name}</text><text x="${tx.toFixed(1)}" y="${(ty+18).toFixed(1)}" text-anchor="middle" font-size="10" fill="#9aa6bb">${count}</text>`;
+    }).join('');
+    const empty=!loaded;
+    el.innerHTML=`<div class="history-compass-chart"><svg viewBox="0 0 320 320" role="img" aria-label="Wind-from compass. ${names.map((n,i)=>n+' '+counts[i]).join(', ')}" xmlns="http://www.w3.org/2000/svg"><circle cx="160" cy="160" r="123" fill="none" stroke="rgba(255,255,255,.10)"/>${shapes}<circle cx="160" cy="160" r="40" fill="#111727" stroke="rgba(255,255,255,.13)"/><text x="160" y="154" text-anchor="middle" fill="#f6f7fb" font-size="25" font-weight="800">${loaded}</text><text x="160" y="173" text-anchor="middle" fill="#9aa6bb" font-size="10">of ${rows.length} efforts</text></svg></div><div class="history-compass-details"><strong>${empty?'Waiting for wind data':loaded+' of '+rows.length+' efforts classified'}</strong><p>Brighter sectors indicate more top leaderboard efforts with winds <em>from</em> that direction. Each leaderboard row counts once, including multiple riders on the same date.</p><div class="history-compass-scale"><span>0 efforts</span><span class="history-compass-gradient"></span><span>${max} efforts</span></div><p class="history-compass-note">Directions use the 7–9 AM wind model, not verified ride-time measurements. If wind data fails to load, no directions are inferred. This shows frequency among top efforts, not the probability of a PR for each direction.</p></div>`;
+  }
+
   function render() {
     const known = Object.values(dateMap).filter(v=>v && !v.error);
     const failed = Object.values(dateMap).filter(v=>v && v.error).length;
@@ -26,6 +56,7 @@
       const w=dateMap[d];
       return `<div class="history-day"><div class="history-day-date">${formatDate(d)}</div><strong>${!w?'Loading…':w.error?'Unavailable':w.speed.toFixed(1)+' mph '+windFrom(w.dir)}</strong><span>${w&&!w.error?'7–9 AM · peak gust '+w.gust.toFixed(1)+' mph':''}</span></div>`;
     }).join('');
+    renderCompass();
   }
   async function load() {
     refresh.disabled = true;
