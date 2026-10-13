@@ -160,3 +160,17 @@ footer { display:flex; justify-content:space-between; gap:20px; color:#68758c; f
 .history-table tr:last-child td {border-bottom:0}
 .history-footnote {font-size:12px;margin:18px 0}
 @media(max-width:640px){.history-heading{flex-direction:column}}
+
+.history-compass-card {margin:22px 0 26px;padding:24px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
+.history-compass-card h3 {font-size:22px;letter-spacing:-.03em;margin:8px 0}
+.history-compass-intro {font-size:13px;color:var(--muted);margin:0}
+.history-compass {display:flex;align-items:center;justify-content:center;gap:30px;flex-wrap:wrap;margin-top:10px}
+.history-compass-chart {width:min(100%,370px);flex:0 1 370px}
+.history-compass-chart svg {display:block;width:100%;height:auto}
+.history-compass-details {flex:1;min-width:220px;max-width:390px;color:var(--muted);font-size:14px;line-height:1.6}
+.history-compass-details strong {display:block;color:var(--text);font-size:18px}
+.history-compass-details p {margin:10px 0}
+.history-compass-scale {display:flex;gap:10px;align-items:center;font-size:11px}
+.history-compass-gradient {height:12px;border-radius:6px;flex:1;background:linear-gradient(90deg,rgba(89,216,124,.22),rgba(89,216,124,.95))}
+.history-compass-note {font-size:12px}
+@media(max-width:640px){.history-compass-card{padding:16px}.history-compass-details{min-width:0;width:100%}}
