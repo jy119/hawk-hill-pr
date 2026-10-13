@@ -172,6 +172,12 @@
     }));
   }
 
+  // Early starts count even when Open-Meteo reports darkness at 5–6 AM.
+  function eligibleRideHour(p) {
+    const hour = Number(p.time.slice(11, 13));
+    return p.isDay || hour === 5 || hour === 6;
+  }
+
   function rerank() {
     const calm = predictRouteTime({ windMph: 0, windFromDeg: 0, tempF: 55 }, settings);
     els.calmTime.textContent = formatDuration(calm);
@@ -185,7 +191,7 @@
         const predictedSec = predictRouteTime(p, settings);
         const savingsSec = calm - predictedSec;
         const gustSpread = Math.max(0, p.gustMph - p.windMph);
-        const safe = p.isDay && p.precipIn < 0.01 && p.gustMph <= 35;
+        const safe = eligibleRideHour(p) && p.precipIn < 0.01 && p.gustMph <= 35;
         const wetPenalty = p.precipIn >= 0.01 ? 120 : p.precipProb > 45 ? 8 : 0;
         const gustPenalty = Math.max(0, gustSpread - 8) * 0.15;
         const rankingSec = predictedSec + wetPenalty + gustPenalty;
@@ -193,11 +199,11 @@
       });
 
     const candidates = predictions.filter(p => p.safe);
-    const ranked = (candidates.length ? candidates : predictions.filter(p => p.isDay))
+    const ranked = (candidates.length ? candidates : predictions.filter(p => eligibleRideHour(p)))
       .sort((a, b) => a.rankingSec - b.rankingSec);
 
     if (!ranked.length) {
-      showStatus('No daylight forecast windows are available yet.', 'error');
+      showStatus('No eligible forecast windows are available yet.', 'error');
       return;
     }
 
@@ -263,7 +269,7 @@
   }
 
   function renderHeatmap(predictions, calm) {
-    const startHour = 6;
+    const startHour = 5;
     const endHour = 19;
     const dayFmt = new Intl.DateTimeFormat('en-US', { weekday: 'short' });
     const dateFmt = new Intl.DateTimeFormat('en-US', { month: 'numeric', day: 'numeric' });
@@ -275,7 +281,7 @@
       if (hour < startHour || hour > endHour) continue;
       const key = `${d}|${hour}`;
       const prev = groups.get(key);
-      if (p.isDay && p.precipIn < 0.01 && (!prev || p.rankingSec < prev.rankingSec)) groups.set(key, p);
+      if (eligibleRideHour(p) && p.precipIn < 0.01 && (!prev || p.rankingSec < prev.rankingSec)) groups.set(key, p);
     }
 
     const days = [...new Set(predictions.map(p => p.time.slice(0, 10)))].slice(0, 7);
