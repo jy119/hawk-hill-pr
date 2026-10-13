@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0b1020" />
+  <title>Hawk Hill PR — 7-Day Wind Window</title>
+  <meta name="description" content="Find the fastest forecast window to PR Hawk Hill using 15-minute wind forecasts and route-aware cycling physics." />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">HAWK HILL • MARIN HEADLANDS</div>
+        <h1>PR window</h1>
+        <p class="lede">Seven-day, 15-minute forecast ranking for the classic Hawk Hill segment.</p>
+      </div>
+      <button id="refreshBtn" class="btn ghost" type="button" aria-label="Refresh forecast">Refresh</button>
+    </header>
+
+    <section id="status" class="status loading">Loading the latest forecast…</section>
+
+    <section id="hero" class="hero hidden" aria-live="polite">
+      <div class="hero-copy">
+        <div class="label">BEST SHOT THIS WEEK</div>
+        <div id="bestTime" class="best-time">—</div>
+        <div id="bestDate" class="best-date">—</div>
+        <div id="bestSummary" class="best-summary">—</div>
+        <div class="chips" id="bestChips"></div>
+      </div>
+      <div class="hero-metric">
+        <div class="label">MODELLED TIME</div>
+        <div id="bestPredicted" class="big-number">—</div>
+        <div id="bestDelta" class="delta">—</div>
+        <div id="confidence" class="confidence">—</div>
+      </div>
+    </section>
+
+    <section class="grid two-col">
+      <article class="card">
+        <div class="card-head">
+          <div>
+            <div class="label">TOP WINDOWS</div>
+            <h2>When to go</h2>
+          </div>
+          <div class="hint">Separated by ≥ 60 min</div>
+        </div>
+        <div id="topWindows" class="window-list skeleton-block"></div>
+      </article>
+
+      <article class="card route-card">
+        <div class="card-head">
+          <div>
+            <div class="label">ROUTE MODEL</div>
+            <h2>Hawk Hill</h2>
+          </div>
+          <a class="tiny-link" href="https://www.strava.com/segments/229781" target="_blank" rel="noopener">Strava ↗</a>
+        </div>
+        <svg id="routeSvg" class="route-svg" viewBox="0 0 640 260" role="img" aria-label="Hawk Hill route trace"></svg>
+        <div class="route-stats">
+          <div><span>Distance</span><strong>1.67 mi</strong></div>
+          <div><span>Gain</span><strong>511 ft</strong></div>
+          <div><span>Avg grade</span><strong>5.7%</strong></div>
+          <div><span>Mean bearing</span><strong>249°</strong></div>
+        </div>
+        <p class="fineprint">Wind is projected onto each polyline leg of the actual Strava segment, so the road's bends matter instead of treating the climb as one straight line.</p>
+      </article>
+    </section>
+
+    <section class="card heat-card">
+      <div class="card-head heat-head">
+        <div>
+          <div class="label">WEEK VIEW</div>
+          <h2>Best hour by day</h2>
+        </div>
+        <div class="legend"><span class="swatch hot"></span> faster <span class="swatch cold"></span> slower</div>
+      </div>
+      <div id="heatmap" class="heatmap skeleton-block"></div>
+      <p class="fineprint">Each cell uses the fastest 15-minute forecast inside that hour. Nighttime and wet windows are suppressed.</p>
+    </section>
+
+    <section class="grid two-col settings-row">
+      <article class="card">
+        <div class="card-head">
+          <div>
+            <div class="label">YOUR SETUP</div>
+            <h2>Prediction inputs</h2>
+          </div>
+          <button id="resetBtn" class="tiny-button" type="button">Reset</button>
+        </div>
+
+        <div class="form-grid">
+          <label>Target power
+            <div class="input-unit"><input id="powerInput" inputmode="decimal" type="number" min="100" max="800" step="5" /><span>W</span></div>
+          </label>
+          <label>Rider weight
+            <div class="input-unit"><input id="riderInput" inputmode="decimal" type="number" min="80" max="350" step="1" /><span>lb</span></div>
+          </label>
+          <label>Bike + kit
+            <div class="input-unit"><input id="bikeInput" inputmode="decimal" type="number" min="10" max="60" step="0.5" /><span>lb</span></div>
+          </label>
+          <label>CdA
+            <div class="input-unit"><input id="cdaInput" inputmode="decimal" type="number" min="0.18" max="0.6" step="0.01" /><span>m²</span></div>
+          </label>
+        </div>
+        <div class="calm-row"><span>Calm-air model</span><strong id="calmTime">—</strong></div>
+        <p class="fineprint">Defaults are set for a strong ~182 lb rider at 400 W. Change them and the entire week re-ranks instantly. Settings are saved only in your browser.</p>
+      </article>
+
+      <article class="card">
+        <div class="card-head">
+          <div>
+            <div class="label">HOW IT WORKS</div>
+            <h2>What the model values</h2>
+          </div>
+        </div>
+        <div class="method-list">
+          <div><strong>1</strong><p><b>Route-aware wind.</b> Meteorological wind direction is converted to a wind vector, then projected along every segment bearing.</p></div>
+          <div><strong>2</strong><p><b>Cycling physics.</b> For each route leg, speed is solved from gravity, rolling resistance and relative-air aerodynamic drag.</p></div>
+          <div><strong>3</strong><p><b>PR filters.</b> Only daylight windows are ranked; rain and very high gusts are penalized or removed.</p></div>
+          <div><strong>4</strong><p><b>Forecast honesty.</b> Tomorrow's forecast is more trustworthy than day seven, so horizon confidence is shown separately from speed.</p></div>
+        </div>
+      </article>
+    </section>
+
+    <footer>
+      <span>Forecast: Open-Meteo • Segment geometry: Strava segment 229781</span>
+      <span id="updatedAt">—</span>
+    </footer>
+  </main>
+
+  <script src="./app.js" defer></script>
+</body>
+</html>
